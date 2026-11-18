@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Decolaê — Passagens e gestão de voos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><div class="bar"><a class="logo" href="#inicio">Decola<span>ê</span></a>
+  <nav id="nav" aria-label="Áreas do sistema"><a href="#inicio" data-g="cliente">Cliente</a><a href="#gerente" data-g="gerente">Gerente</a><a href="#admin" data-g="admin">Administrador</a></nav></div></header>
+<main>
+  <div class="notice" role="status"><strong>Modo demonstração.</strong> As operações nesta versão alteram somente dados temporários no navegador. O PostgreSQL será conectado na próxima etapa.</div>
+  <section id="inicio">
+    <div class="hero"><h1>Para onde vamos voar?</h1><p>Busque voos domésticos e reserve sua passagem.</p>
+      <form class="search" id="fBusca">
+        <div><label for="bo">Origem</label><select id="bo" required></select></div>
+        <div><label for="bd">Destino</label><select id="bd" required></select></div>
+        <div><label for="bdata">Data da viagem</label><input id="bdata" type="date" required></div>
+        <button class="btn y" type="submit">Buscar voos</button>
+      </form><div id="buscaMsg" aria-live="polite"></div>
+    </div>
+    <div class="card"><h2>Como funciona</h2><p class="sub">1. Busque um voo · 2. Selecione · 3. Informe cliente e assento · 4. Receba o código da reserva.</p></div>
+  </section>
+  <section id="resultados" hidden>
+    <div class="steps"><b>1. Busca</b><b class="on">2. Voos</b><b>3. Compra</b></div>
+    <div class="head"><div><h1>Voos encontrados</h1><p class="sub" id="resInfo"></p></div><a class="btn s" href="#inicio">Nova busca</a></div>
+    <div id="resList" aria-live="polite"></div>
+  </section>
+  <section id="compra" hidden>
+    <div class="steps"><b>1. Busca</b><b>2. Voos</b><b class="on">3. Compra</b></div>
+    <h1>Compra de passagem</h1><p class="sub">Revise o voo e confirme os dados.</p>
+    <div id="compraBox" class="grid2"></div>
+  </section>
+  <section id="gerente" hidden>
+    <h1>Painel do gerente</h1><p class="sub">Cadastros da frota, malha e equipe.</p>
+    <div class="head"><div><label for="gResponsavel">Gerente responsável pelos cadastros</label><select id="gResponsavel"></select></div></div>
+    <div class="tabs" id="gTabs" role="group" aria-label="Cadastros"></div>
+    <div class="card"><div class="head"><h2 id="gTitle"></h2><button class="btn y" id="gAdd">+ Adicionar</button></div><div id="gBody"></div></div>
+  </section>
+  <section id="admin" hidden>
+    <h1>Painel do administrador</h1><p class="sub">Programação de voos e escala de tripulação.</p>
+    <div class="head"><div><label for="vResponsavel">Administrador responsável</label><select id="vResponsavel"></select></div></div>
+    <div class="card"><div class="head"><h2>Voos existentes</h2><button class="btn y" id="vNovo">+ Criar voo</button></div><div id="vBody"></div></div>
+    <div class="card" id="vForm" hidden style="margin-top:16px"><h2 id="vFormTitle">Novo voo</h2><div id="vMsg" aria-live="polite"></div><form class="form" id="fVoo" novalidate></form></div>
+  </section>
+  <p class="note">Projeto acadêmico — UFSJ. Sem autenticação real ou pagamento financeiro nesta versão de demonstração.</p>
+</main>
+<dialog id="dlg" aria-label="Formulário de cadastro"><form id="dForm" novalidate></form></dialog>
+<div class="toast" id="toast" hidden role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
