@@ -5,6 +5,18 @@ if (!process.env.DATABASE_URL &&
 }
 
 const { Pool } = require('pg');
+try {
+  const url = new URL(process.env.DATABASE_URL);
+
+  console.log('Diagnóstico PostgreSQL:', {
+    protocolo: url.protocol,
+    host: url.hostname,
+    banco: url.pathname,
+    usaNeon: url.hostname.endsWith('.neon.tech')
+  });
+} catch (erro) {
+  console.error('DATABASE_URL inválida ou ausente:', erro.message);
+}
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
