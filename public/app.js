@@ -40,17 +40,289 @@ const changed = ()=>new Promise(resolve=>setTimeout(resolve,120));
 const demoFare =v=>first('passagem','codigo_voo',v.codigo_voo)?.valor ?? 300;
 
 const DATA={
-  async list(table){await changed();return DB[table]},
+  
+async list(table) {
+  // Aeronaves são consultadas no PostgreSQL real
+  if (table === 'aeronave') {
+    const resposta = await fetch('/api/aeronaves');
+
+    if (!resposta.ok) {
+      throw new Error('Não foi possível carregar as aeronaves.');
+    }
+
+    return await resposta.json();
+  }
+
+  // Outras tabelas continuam temporariamente em demonstração
+
+if (table === 'trajeto') {
+  const resposta = await fetch('/api/trajetos');
+
+  if (!resposta.ok) {
+    throw new Error('Não foi possível carregar os trajetos.');
+  }
+
+  return await resposta.json();
+}
+
+if (table === 'funcionario') {
+  const resposta = await fetch('/api/funcionarios');
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível carregar os funcionários.'
+    );
+  }
+
+  return resultado;
+}
+
+if (table === 'voo') {
+  const resposta = await fetch('/api/admin-voos');
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível carregar os voos.'
+    );
+  }
+
+  return resultado;
+}
+
+  await changed();
+  return DB[table];
+},
+
   async search(o,d,day){await changed();return DB.voo.filter(v=>{
     const t=flightRoute(v);return t&&t.aeroporto_partida===o&&t.aeroporto_chegada===d&&v.d_h_partida.startsWith(day);
   }).sort((a,b)=>a.d_h_partida.localeCompare(b.d_h_partida))},
   async save(table,record,oldKey){
+
+if (table === 'trajeto') {
+  const editando = oldKey !== undefined && oldKey !== null;
+
+  
+const dados = {
+  ...record,
+  codigo_rota: editando
+    ? Number(oldKey)
+    : Number(record.codigo_rota),
+  cpf_gerente: null
+};
+
+  const resposta = await fetch('/api/trajetos', {
+    method: editando ? 'PUT' : 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dados)
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível salvar o trajeto.'
+    );
+  }
+
+  return resultado.trajeto;
+}
+
+
+if (table === 'aeronave') {
+  const editando = oldKey !== undefined && oldKey !== null;
+
+  const resposta = await fetch('/api/aeronaves', {
+    method: editando ? 'PUT' : 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(record)
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível salvar a aeronave.'
+    );
+  }
+
+  return resultado.aeronave;
+}
+
+if (table === 'funcionario') {
+  const editando = oldKey !== undefined && oldKey !== null;
+
+  const dados = {
+    ...record,
+    cpf: editando ? String(oldKey) : String(record.cpf),
+    tipo_funcionario: record.tipo_funcionario || null
+  };
+
+  const resposta = await fetch('/api/funcionarios', {
+    method: editando ? 'PUT' : 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dados)
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível salvar o funcionário.'
+    );
+  }
+
+  return resultado;
+}
+
+if (table === 'voo') {
+  const resposta = await fetch('/api/admin-voos');
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível carregar os voos.'
+    );
+  }
+
+  return resultado;
+}
+
+
+if (table === 'voo') {
+  const editando = oldKey !== undefined && oldKey !== null;
+
+  const dados = {
+    ...record,
+    codigo_voo: editando
+      ? Number(oldKey)
+      : Number(record.codigo_voo)
+  };
+
+  const resposta = await fetch('/api/admin-voos', {
+    method: editando ? 'PUT' : 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dados)
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível salvar o voo.'
+    );
+  }
+
+  return resultado;
+}
+
+
+
     await changed();const pk=keyOf[table];const old=oldKey===undefined?null:first(table,pk,oldKey);
     if(!old&&first(table,pk,record[pk]))throw Error('Já existe um registro com esse identificador.');
     if(old){if(String(record[pk])!==String(oldKey))throw Error('A chave primária não pode ser alterada na edição.');Object.assign(old,record)}
     else DB[table].push({...record});
   },
   async remove(table,pk){
+
+if (table === 'trajeto') {
+  const resposta = await fetch('/api/trajetos', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      codigo_rota: Number(pk)
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível remover o trajeto.'
+    );
+  }
+
+  return resultado;
+}
+
+if (table === 'aeronave') {
+  const resposta = await fetch('/api/aeronaves', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      numero_serie: pk
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível remover a aeronave.'
+    );
+  }
+
+  return resultado;
+}
+
+if (table === 'funcionario') {
+  const resposta = await fetch('/api/funcionarios', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      cpf: String(pk)
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível excluir o funcionário.'
+    );
+  }
+
+  return resultado;
+}
+
+if (table === 'voo') {
+  const resposta = await fetch('/api/admin-voos', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      codigo_voo: Number(pk)
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível excluir o voo.'
+    );
+  }
+
+  return resultado;
+}
+
+
     await changed();const ref={
       aeronave:DB.voo.some(v=>v.numero_serie_aeronave===pk),
       trajeto:DB.voo.some(v=>String(v.codigo_rota)===String(pk)),
@@ -70,37 +342,52 @@ const DATA={
     DB.passagem.push({codigo_reserva:codigo,cpf_cliente:cpf,codigo_voo:voo.codigo_voo,numero_assento:assento,valor:demoFare(voo),data_compra:new Date().toISOString()});
     return {codigo_reserva:codigo};
   },
-  async saveFlight(v,comissarios,original){
-    await changed();const codigo=v.codigo_voo;
-    if(original==null&&first('voo','codigo_voo',codigo))throw Error('Código de voo já cadastrado.');
-    if(original!=null&&codigo!==original)throw Error('Não altere o código do voo durante a edição.');
-    if(v.d_h_chegada<=v.d_h_partida)throw Error('A chegada deve ocorrer após a partida.');
-    if(v.cpf_piloto===v.cpf_copiloto)throw Error('Piloto e copiloto precisam ser diferentes.');
-    if(comissarios.length<2||comissarios.length>4||new Set(comissarios).size!==comissarios.length)throw Error('Selecione entre 2 e 4 comissários diferentes.');
-    if(comissarios.includes(v.cpf_piloto)||comissarios.includes(v.cpf_copiloto))throw Error('Um tripulante não pode ocupar duas funções no mesmo voo.');
-    const selected=[v.cpf_piloto,v.cpf_copiloto,...comissarios];
-    // Regra didática: nenhuma sobreposição e mínimo de 36h entre voos de um mesmo tripulante.
-    for(const old of DB.voo){
-      if(old.codigo_voo===original)continue;
-      const overlap=v.d_h_partida<old.d_h_chegada&&v.d_h_chegada>old.d_h_partida;
-      if(overlap&&v.numero_serie_aeronave===old.numero_serie_aeronave)throw Error('Conflito: aeronave já usada no voo '+old.codigo_voo+'.');
-      const others=[old.cpf_piloto,old.cpf_copiloto,...crew(old)];
-      const repeat=selected.filter(c=>others.includes(c));
-      if(repeat.length){
-        if(overlap)throw Error('Conflito: tripulante já escalado no voo '+old.codigo_voo+'.');
-        const rest=36*3600*1000;
-        const endOld=new Date(localDT(old.d_h_chegada)).getTime(),startOld=new Date(localDT(old.d_h_partida)).getTime();
-        const start=new Date(localDT(v.d_h_partida)).getTime(),end=new Date(localDT(v.d_h_chegada)).getTime();
-        if((start>=endOld&&start-endOld<rest)||(startOld>=end&&startOld-end<rest))throw Error('Descanso insuficiente (mínimo 36h) para tripulante do voo '+old.codigo_voo+'.');
-      }
-    }
-    const duration=(new Date(localDT(v.d_h_chegada))-new Date(localDT(v.d_h_partida)))/3600000;
-    if(duration>12)throw Error('Voo com duração superior a 12h: revise a regra demonstrativa de jornada.');
-    if(original==null)DB.voo.push({...v});
-    else Object.assign(first('voo','codigo_voo',original),v);
-    DB.escala_comissario=DB.escala_comissario.filter(c=>c.codigo_voo!==codigo);
-    DB.escala_comissario.push(...comissarios.map(cpf=>({codigo_voo:codigo,cpf_comissario:cpf})));
+  
+async saveFlight(v, comissarios, original) {
+  const editando = original !== undefined && original !== null;
+
+  if (editando && Number(v.codigo_voo) !== Number(original)) {
+    throw new Error('O código do voo não pode ser alterado.');
   }
+
+  if (v.d_h_chegada <= v.d_h_partida) {
+    throw new Error('A chegada deve ocorrer após a partida.');
+  }
+
+  if (v.cpf_piloto === v.cpf_copiloto) {
+    throw new Error('Piloto e copiloto devem ser diferentes.');
+  }
+
+  if (
+    comissarios.length < 2 ||
+    comissarios.length > 4 ||
+    new Set(comissarios).size !== comissarios.length
+  ) {
+    throw new Error('Selecione de 2 a 4 comissários diferentes.');
+  }
+
+  const resposta = await fetch('/api/admin-voos', {
+    method: editando ? 'PUT' : 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...v,
+      comissarios
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(
+      resultado.erro || 'Não foi possível salvar o voo.'
+    );
+  }
+
+  return resultado;
+}
+
 };
 
 function toast(text){const el=$('#toast');el.textContent=text;el.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.hidden=true,3000)}
@@ -155,60 +442,369 @@ function route(){
   window.scrollTo(0,0);
 }
 window.addEventListener('hashchange',route);
-function init(){
-  const airports=DB.aeroporto;
-  $('#bo').replaceChildren(...options(airports,'nome_aeroporto',x=>city(x.nome_aeroporto),true));
-  $('#bd').replaceChildren(...options(airports,'nome_aeroporto',x=>city(x.nome_aeroporto),true));
-  $('#gResponsavel').replaceChildren(...options(staff('GERENTE'),'cpf','nome'));
-  $('#vResponsavel').replaceChildren(...options(staff('ADMINISTRADOR'),'cpf','nome'));
-  $('#fBusca').onsubmit=e=>{
-    e.preventDefault();const o=$('#bo').value,d=$('#bd').value,data=$('#bdata').value;
-    if(!o||!d||!data||o===d){$('#buscaMsg').replaceChildren(msg('err','Selecione origem, destino diferentes e a data.'));return}
-    $('#buscaMsg').replaceChildren();S.search={o,d,data};location.hash='resultados';if(location.hash==='#resultados')renderResults();
+
+async function initBusca() {
+  const origem = document.querySelector('#bo');
+  const destino = document.querySelector('#bd');
+  const data = document.querySelector('#bdata');
+  const mensagem = document.querySelector('#buscaMsg');
+  $('#gResponsavel').replaceChildren(
+  ...options(staff('GERENTE'), 'cpf', 'nome')
+);
+
+$('#vResponsavel').replaceChildren(
+  ...options(staff('ADMINISTRADOR'), 'cpf', 'nome')
+);
+
+  try {
+    const resposta = await fetch('/api/voos');
+
+    if (!resposta.ok) {
+      throw new Error('Não foi possível consultar os voos.');
+    }
+
+    const voos = await resposta.json();
+
+    const origens = [...new Set(voos.map(v => v.origem))];
+    const destinos = [...new Set(voos.map(v => v.destino))];
+
+    origem.replaceChildren();
+    destino.replaceChildren();
+
+    origens.forEach(nome => {
+      origem.add(new Option(nome, nome));
+    });
+
+    destinos.forEach(nome => {
+      destino.add(new Option(nome, nome));
+    });
+
+    data.value = voos.length
+      ? voos[0].d_h_partida.slice(0, 10)
+      : '';
+
+  } catch (erro) {
+    mensagem.replaceChildren(
+      msg('err', 'Erro ao carregar os aeroportos: ' + erro.message)
+    );
+  }
+
+  document.querySelector('#fBusca').onsubmit = evento => {
+    evento.preventDefault();
+
+    const o = origem.value;
+    const d = destino.value;
+    const dia = data.value;
+
+    if (!o || !d || !dia || o === d) {
+      mensagem.replaceChildren(
+        msg('err', 'Informe uma origem, destino diferente e data válida.')
+      );
+      return;
+    }
+
+    mensagem.replaceChildren();
+
+    S.search = { o, d, data: dia };
+    location.hash = 'resultados';
   };
-  const firstFlight=DB.voo[0];if(firstFlight)$('#bdata').value=firstFlight.d_h_partida.slice(0,10);
   route();
 }
-async function renderResults(){
-  const b=S.search;if(!b)return;
-  $('#resInfo').textContent=city(b.o)+' → '+city(b.d)+' · '+date(b.data);
-  const list=$('#resList');list.replaceChildren(state('Carregando voos…'));
-  try{const flights=await DATA.search(b.o,b.d,b.data);
-    if(!flights.length){list.replaceChildren(state('Nenhum voo encontrado para a data selecionada.'));return}
-    list.replaceChildren(...flights.map(v=>{
-      const t=flightRoute(v),a=plane(v),free=a.qtd_assentos-occupancy(v).length;
-      return h('div',{class:'card flight'},h('div',{},
-        h('div',{class:'route'},h('div',{},h('div',{class:'t'},time(v.d_h_partida)),h('div',{class:'ap'},city(t.aeroporto_partida))),h('div',{class:'line'}),h('div',{},h('div',{class:'t'},time(v.d_h_chegada)),h('div',{class:'ap'},city(t.aeroporto_chegada)))),
-        h('div',{class:'meta'},'📅 '+date(v.d_h_partida)+' · ✈ '+a.modelo+' · '+free+' lugares disponíveis')),
-        h('div',{},h('div',{class:'price'},money(demoFare(v))),h('button',{class:'btn y',disabled:free<1,onclick:()=>{S.flight=v;location.hash='compra'}},free?'Selecionar voo':'Esgotado')));
-    }));
-  }catch(err){list.replaceChildren(msg('err',err.message),h('button',{class:'btn',onclick:renderResults},'Tentar novamente'))}
+
+
+async function renderResults() {
+  const b = S.search;
+  if (!b) return;
+
+  $('#resInfo').textContent =
+    b.o + ' → ' + b.d + ' · ' + date(b.data);
+
+  const list = $('#resList');
+  list.replaceChildren(state('Buscando voos no banco de dados…'));
+
+  // Converte datas do PostgreSQL para o horário de Brasília
+  function horario(valor) {
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(valor));
+  }
+
+  function dataLocal(valor) {
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date(valor));
+
+    const campo = tipo =>
+      partes.find(p => p.type === tipo).value;
+
+    return `${campo('year')}-${campo('month')}-${campo('day')}`;
+  }
+
+  try {
+    const resposta = await fetch('/api/voos');
+
+    if (!resposta.ok) {
+      throw new Error('Não foi possível consultar os voos.');
+    }
+
+    const todosVoos = await resposta.json();
+
+    const voos = todosVoos.filter(v =>
+      v.origem === b.o &&
+      v.destino === b.d &&
+      dataLocal(v.d_h_partida) === b.data
+    );
+
+    if (voos.length === 0) {
+      list.replaceChildren(
+        state('Nenhum voo encontrado para esta pesquisa.')
+      );
+      return;
+    }
+
+    list.replaceChildren(...voos.map(v =>
+      h('div', { class: 'card flight' },
+        h('div', {},
+          h('div', { class: 'route' },
+            h('div', {},
+              h('div', { class: 't' }, horario(v.d_h_partida)),
+              h('div', { class: 'ap' }, v.origem)
+            ),
+            h('div', { class: 'line' }),
+            h('div', {},
+              h('div', { class: 't' }, horario(v.d_h_chegada)),
+              h('div', { class: 'ap' }, v.destino)
+            )
+          ),
+          h('div', { class: 'meta' },
+            '✈ ' + v.aeronave +
+            ' · ' + v.disponiveis + ' assentos disponíveis'
+          )
+        ),
+        h('div', {},
+          h('div', { class: 'price' }, 'Voo #' + v.codigo_voo),
+          
+h('button', {
+  class: 'btn y',
+  disabled: v.disponiveis <= 0,
+  onclick: () => {
+    S.flight = v;
+    location.hash = 'compra';
+  }
+}, v.disponiveis > 0 ? 'Selecionar voo' : 'Esgotado')
+
+        )
+      )
+    ));
+
+  } catch (erro) {
+    list.replaceChildren(
+      msg('err', 'Erro ao buscar voos: ' + erro.message)
+    );
+  }
 }
-function renderPurchase(){
-  const v=S.flight;if(!v)return;const t=flightRoute(v),a=plane(v),occupied=occupancy(v);
-  const summary=h('div',{class:'card'},h('h2',{},'Resumo do voo'),h('dl',{class:'sum'},
-    h('dt',{},'Trajeto'),h('dd',{},city(t.aeroporto_partida)+' → '+city(t.aeroporto_chegada)),
-    h('dt',{},'Data e horário'),h('dd',{},date(v.d_h_partida)+' · '+time(v.d_h_partida)+' às '+time(v.d_h_chegada)),
-    h('dt',{},'Aeronave'),h('dd',{},a.modelo),h('dt',{},'Valor de demonstração'),h('dd',{class:'price',style:'text-align:left'},money(demoFare(v)))));
-  const selector=h('select',{id:'cCli'},...options(DB.cliente,'cpf','nome',true));
-  const seats=h('select',{id:'cAss',class:'assentos'},h('option',{value:''},'Selecione um assento livre…'),
-    ...Array.from({length:a.qtd_assentos},(_,i)=>h('option',{value:i+1,disabled:occupied.includes(i+1)},
-      `Assento ${i+1}${occupied.includes(i+1)?' (ocupado)':''}`)));
-  const m=h('div'),submit=h('button',{class:'btn y',type:'button'},'Confirmar compra');
-  const form=h('div',{class:'card'},h('h2',{},'Passageiro e assento'),m,h('label',{for:'cCli'},'Cliente cadastrado'),selector,
-    h('div',{style:'margin-top:10px'},h('label',{for:'cAss'},'Assento disponível'),seats),
-    h('div',{class:'actions',style:'margin-top:16px'},submit,h('a',{class:'btn s',href:'#resultados'},'Voltar')));
-  $('#compraBox').replaceChildren(summary,form);
-  submit.onclick=async()=>{
-    if(!selector.value||!seats.value){m.replaceChildren(msg('err','Escolha o cliente e um assento livre.'));return}
-    submit.disabled=true;m.replaceChildren(msg('info','Registrando reserva de demonstração…'));
-    try{const r=await DATA.buy(v,selector.value,Number(seats.value));
-      $('#compraBox').replaceChildren(h('div',{class:'card full',style:'grid-column:1/-1;text-align:center'},
-        msg('ok','Compra confirmada no modo demonstração!'),h('p',{class:'sub'},'Código da reserva'),h('div',{class:'code'},r.codigo_reserva),
-        h('p',{},city(t.aeroporto_partida)+' → '+city(t.aeroporto_chegada)+' · '+date(v.d_h_partida)+' · Assento '+seats.value),
-        h('a',{class:'btn',href:'#inicio'},'Voltar ao início')));
-    }catch(err){submit.disabled=false;m.replaceChildren(msg('err',err.message))}
-  };
+
+async function renderPurchase() {
+  const v = S.flight;
+  if (!v) return;
+
+  const box = $('#compraBox');
+  box.replaceChildren(state('Consultando assentos no Neon…'));
+
+  // Horário brasileiro para apresentação
+  const formatarData = valor =>
+    new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short'
+    }).format(new Date(valor));
+
+  const formatarHora = valor =>
+    new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(valor));
+
+  try {
+    const resposta = await fetch(
+      '/api/assentos?voo=' + encodeURIComponent(v.codigo_voo)
+    );
+
+    if (!resposta.ok) {
+      throw new Error('Não foi possível carregar os assentos.');
+    }
+
+    const dados = await resposta.json();
+
+    const resumo = h('div', { class: 'card' },
+      h('h2', {}, 'Resumo do voo'),
+      h('dl', { class: 'sum' },
+        h('dt', {}, 'Voo'),
+        h('dd', {}, '#' + v.codigo_voo),
+
+        h('dt', {}, 'Trajeto'),
+        h('dd', {}, v.origem + ' → ' + v.destino),
+
+        h('dt', {}, 'Data'),
+        h('dd', {}, formatarData(v.d_h_partida)),
+
+        h('dt', {}, 'Horário'),
+        h('dd', {},
+          formatarHora(v.d_h_partida) + ' às ' +
+          formatarHora(v.d_h_chegada)
+        ),
+
+        h('dt', {}, 'Aeronave'),
+        h('dd', {}, v.aeronave),
+
+        h('dt', {}, 'Assentos disponíveis'),
+        h('dd', {}, String(dados.disponiveis))
+      )
+    );
+
+    // Consulta os clientes cadastrados no PostgreSQL
+    const respostaClientes = await fetch('/api/clientes');
+
+    if (!respostaClientes.ok) {
+      throw new Error('Não foi possível carregar os clientes.');
+    }
+
+    const clientes = await respostaClientes.json();
+
+    const seletorClientes = h('select', { id: 'cCli' },
+      h('option', { value: '' }, 'Selecione um cliente…'),
+      ...clientes.map(cliente =>
+        h('option', { value: cliente.cpf }, cliente.nome)
+      )
+    );
+
+    const ocupados = new Set(dados.ocupados);
+
+    const assentos = h('select', { id: 'cAss' },
+      h('option', { value: '' }, 'Selecione um assento…'),
+      ...Array.from({ length: dados.capacidade }, (_, i) => {
+        const numero = i + 1;
+        const ocupado = ocupados.has(numero);
+
+        return h('option', {
+          value: numero,
+          disabled: ocupado
+        }, `Assento ${numero}${ocupado ? ' (ocupado)' : ''}`);
+      })
+    );
+
+    const formulario = h('div', { class: 'card' },
+      h('h2', {}, 'Passageiro e assento'),
+
+      h('label', { for: 'cCli' }, 'Cliente cadastrado'),
+      seletorClientes,
+
+
+      h('label', { for: 'cAss' }, 'Escolha seu assento'),
+      assentos,
+
+      h('p', { class: 'sub', style: 'margin-top:12px' },
+        `${dados.ocupados.length} ocupados · ` +
+        `${dados.disponiveis} disponíveis`
+      ),
+
+      h('div', { class: 'msg info' },
+        'A consulta de assentos já utiliza o banco real. ' +
+        'A confirmação da compra será habilitada após ' +
+        'integrarmos os clientes e o registro de passagens.'
+      ),
+
+      h('div', { class: 'actions', style: 'margin-top:16px' },
+        h('button', {
+  class: 'btn y',
+  id: 'confirmarCompra',
+  type: 'button'
+}, 'Confirmar compra'),
+
+        h('a', {
+          class: 'btn s',
+          href: '#resultados'
+        }, 'Voltar')
+      )
+    );
+
+    box.replaceChildren(resumo, formulario);
+
+const botaoCompra = document.querySelector('#confirmarCompra');
+
+botaoCompra.onclick = async () => {
+  const cpf = document.querySelector('#cCli').value;
+  const assento = Number(document.querySelector('#cAss').value);
+
+  if (!cpf || !assento) {
+    alert('Selecione um cliente e um assento.');
+    return;
+  }
+
+  botaoCompra.disabled = true;
+  botaoCompra.textContent = 'Processando compra...';
+
+  try {
+    const resposta = await fetch('/api/comprar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        codigo_voo: v.codigo_voo,
+        cpf_cliente: cpf,
+        numero_assento: assento
+      })
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(resultado.erro || 'Erro ao comprar passagem.');
+    }
+
+    box.replaceChildren(
+      h('div', {
+        class: 'card full',
+        style: 'grid-column:1/-1;text-align:center'
+      },
+        msg('ok', 'Compra registrada com sucesso no PostgreSQL!'),
+        h('p', {}, 'Código da reserva:'),
+        h('div', { class: 'code' },
+          resultado.passagem.codigo_reserva
+        ),
+        h('p', {},
+          'Voo #' + resultado.passagem.codigo_voo +
+          ' · Assento ' + resultado.passagem.numero_assento
+        ),
+        h('a', {
+          class: 'btn',
+          href: '#inicio'
+        }, 'Voltar ao início')
+      )
+    );
+
+  } catch (erro) {
+    alert(erro.message);
+    botaoCompra.disabled = false;
+    botaoCompra.textContent = 'Confirmar compra';
+  }
+};
+
+  } catch (erro) {
+    box.replaceChildren(
+      msg('err', erro.message),
+      h('a', {
+        class: 'btn s',
+        href: '#resultados'
+      }, 'Voltar aos resultados')
+    );
+  }
 }
 
 /* Formulários seguem as colunas do SQL_DECOLAE.sql enviado. */
@@ -292,7 +888,11 @@ async function renderAdmin(){
     {label:'Partida',render:v=>date(v.d_h_partida)+' '+time(v.d_h_partida)},
     {label:'Chegada',render:v=>date(v.d_h_chegada)+' '+time(v.d_h_chegada)},
     {label:'Aeronave',render:v=>plane(v)?.modelo??'—'},
-    {label:'Equipe',render:v=>(2+crew(v).length)+' pessoas'}
+    {
+  label: 'Equipe',
+  render: v =>
+    (2 + (v.comissarios || []).length) + ' tripulantes'
+}
   ],flights,v=>[
     h('button',{class:'btn s sm',onclick:()=>openFlight(v)},'Editar'),
     h('button',{class:'btn d sm',onclick:()=>deleteFlight(v)},'Remover')
@@ -303,47 +903,279 @@ async function deleteFlight(v){
   try{await DATA.remove('voo',v.codigo_voo);toast('Voo removido na demonstração.');renderAdmin()}
   catch(err){alert(err.message)}
 }
-function openFlight(existing){
-  const box=$('#vForm'),form=$('#fVoo'),error=$('#vMsg');box.hidden=false;
-  $('#vFormTitle').textContent=existing?'Editar voo '+existing.codigo_voo:'Novo voo';error.replaceChildren();
-  const next=Math.max(100,...DB.voo.map(v=>v.codigo_voo))+1;
-  const defaults=existing||{};
-  const parts=[
-    inputField('vCodigo','Código do voo','number',defaults.codigo_voo??next,{min:1,step:1,disabled:!!existing}),
-    selectField('vTrajeto','Trajeto',options(DB.trajeto,'codigo_rota',t=>`${t.codigo_rota}: ${t.aeroporto_partida} → ${t.aeroporto_chegada}`,true),defaults.codigo_rota),
-    selectField('vAeronave','Aeronave',options(DB.aeronave,'numero_serie',a=>`${a.modelo} (${a.numero_serie}, ${a.qtd_assentos} assentos)`,true),defaults.numero_serie_aeronave),
-    inputField('vPartida','Data e hora de partida','datetime-local',localDT(defaults.d_h_partida)),
-    inputField('vChegada','Data e hora de chegada','datetime-local',localDT(defaults.d_h_chegada)),
-    selectField('vPiloto','Piloto',options(staff('PILOTO'),'cpf','nome',true),defaults.cpf_piloto),
-    selectField('vCopiloto','Copiloto',options(staff('COPILOTO'),'cpf','nome',true),defaults.cpf_copiloto),
-  ];
-  const checked=new Set(existing?crew(existing):[]);
-  const list=h('div',{class:'checkbox-group'},h('label',{},'Comissários (selecione de 2 a 4)'),
-    h('div',{class:'checks'},...staff('COMISSARIO').map(f=>h('label',{},h('input',{name:'comissario',type:'checkbox',value:f.cpf,checked:checked.has(f.cpf)}),f.nome))),
-    h('p',{class:'hint'},'O backend deverá conferir conflitos, descanso e quantidade de tripulantes antes de gravar.'));
-  form.replaceChildren(...parts,list,h('div',{class:'full actions'},
-    h('button',{class:'btn y',type:'submit'},existing?'Salvar alterações':'Criar voo'),
-    h('button',{class:'btn s',type:'button',onclick:()=>box.hidden=true},'Cancelar')));
-  form.onsubmit=async e=>{
-    e.preventDefault();const get=id=>$('#'+id).value.trim();
-    const comissarios=[...form.querySelectorAll('input[name="comissario"]:checked')].map(x=>x.value);
-    if(!get('vCodigo')||!get('vTrajeto')||!get('vAeronave')||!get('vPartida')||!get('vChegada')||!get('vPiloto')||!get('vCopiloto')){
-      error.replaceChildren(msg('err','Preencha todos os campos do voo.'));return;
-    }
-    if(!Number.isInteger(Number(get('vCodigo')))||Number(get('vCodigo'))<=0){error.replaceChildren(msg('err','Código do voo inválido.'));return}
-    if(comissarios.length<2||comissarios.length>4){error.replaceChildren(msg('err','Selecione de 2 a 4 comissários.'));return}
-    if(!get('vResponsavel')){error.replaceChildren(msg('err','Selecione o administrador responsável.'));return}
-    const voo={codigo_voo:Number(get('vCodigo')),codigo_rota:Number(get('vTrajeto')),
-      numero_serie_aeronave:get('vAeronave'),d_h_partida:get('vPartida').replace('T',' ')+':00',
-      d_h_chegada:get('vChegada').replace('T',' ')+':00',cpf_administrador:get('vResponsavel'),
-      cpf_piloto:get('vPiloto'),cpf_copiloto:get('vCopiloto')};
-    const submit=form.querySelector('button[type="submit"]');submit.disabled=true;
-    error.replaceChildren(msg('info','Validando escala de demonstração…'));
-    try{await DATA.saveFlight(voo,comissarios,existing?.codigo_voo??null);
-      error.replaceChildren(msg('ok','Voo salvo na demonstração.'));toast('Voo salvo na demonstração.');box.hidden=true;renderAdmin();
-    }catch(err){error.replaceChildren(msg('err',err.message))}
-    finally{submit.disabled=false}
-  };
-  box.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-init();
+async function openFlight(existing) {
+  const box = $('#vForm');
+  const form = $('#fVoo');
+  const error = $('#vMsg');
+
+  box.hidden = false;
+  error.replaceChildren(msg('info', 'Carregando dados reais...'));
+
+  $('#vFormTitle').textContent = existing
+    ? 'Editar voo ' + existing.codigo_voo
+    : 'Novo voo';
+
+  try {
+    // Consultar dados reais do PostgreSQL
+    const [voos, trajetos, aeronaves, funcionarios] =
+      await Promise.all([
+        DATA.list('voo'),
+        DATA.list('trajeto'),
+        DATA.list('aeronave'),
+        DATA.list('funcionario')
+      ]);
+
+    const equipe = funcionarios.map(f => ({
+      ...f,
+      cpf: String(f.cpf).trim()
+    }));
+
+    const funcionariosDoCargo = cargo =>
+      equipe.filter(f => f.tipo_funcionario === cargo);
+
+    const proximoCodigo = Math.max(
+      100,
+      ...voos.map(v => Number(v.codigo_voo))
+    ) + 1;
+
+    const defaults = existing || {};
+
+    // Formatar datas para o input datetime-local
+    const dataInput = valor =>
+      valor ? String(valor).slice(0, 16).replace(' ', 'T') : '';
+
+    const parts = [
+      inputField(
+        'vCodigo',
+        'Código do voo',
+        'number',
+        defaults.codigo_voo ?? proximoCodigo,
+        { min: 1, step: 1, disabled: !!existing }
+      ),
+
+      selectField(
+        'vTrajeto',
+        'Trajeto',
+        options(
+          trajetos,
+          'codigo_rota',
+          t => `${t.codigo_rota}: ${t.aeroporto_partida} → ${t.aeroporto_chegada}`,
+          true
+        ),
+        defaults.codigo_rota
+      ),
+
+      selectField(
+        'vAeronave',
+        'Aeronave',
+        options(
+          aeronaves,
+          'numero_serie',
+          a => `${a.modelo} (${a.numero_serie}, ${a.qtd_assentos} assentos)`,
+          true
+        ),
+        defaults.numero_serie_aeronave
+      ),
+
+      inputField(
+        'vPartida',
+        'Data e hora de partida',
+        'datetime-local',
+        dataInput(defaults.d_h_partida)
+      ),
+
+      inputField(
+        'vChegada',
+        'Data e hora de chegada',
+        'datetime-local',
+        dataInput(defaults.d_h_chegada)
+      ),
+
+      selectField(
+        'vAdmin',
+        'Administrador responsável',
+        options(
+          funcionariosDoCargo('ADMINISTRADOR'),
+          'cpf',
+          'nome',
+          true
+        ),
+        defaults.cpf_administrador
+      ),
+
+      selectField(
+        'vPiloto',
+        'Piloto',
+        options(
+          funcionariosDoCargo('PILOTO'),
+          'cpf',
+          'nome',
+          true
+        ),
+        defaults.cpf_piloto
+      ),
+
+      selectField(
+        'vCopiloto',
+        'Copiloto',
+        options(
+          funcionariosDoCargo('COPILOTO'),
+          'cpf',
+          'nome',
+          true
+        ),
+        defaults.cpf_copiloto
+      )
+    ];
+
+    const selecionados = new Set(
+      (defaults.comissarios || []).map(String)
+    );
+
+    const listaComissarios = h(
+      'div',
+      { class: 'checkbox-group' },
+
+      h(
+        'label',
+        {},
+        'Comissários (selecione de 2 a 4)'
+      ),
+
+      h(
+        'div',
+        { class: 'checks' },
+        ...funcionariosDoCargo('COMISSARIO').map(f =>
+          h(
+            'label',
+            {},
+            h('input', {
+              name: 'comissario',
+              type: 'checkbox',
+              value: f.cpf,
+              checked: selecionados.has(f.cpf)
+            }),
+            f.nome
+          )
+        )
+      )
+    );
+
+    form.replaceChildren(
+      ...parts,
+      listaComissarios,
+
+      h(
+        'div',
+        { class: 'full actions' },
+
+        h(
+          'button',
+          { class: 'btn y', type: 'submit' },
+          existing ? 'Salvar alterações' : 'Criar voo'
+        ),
+
+        h(
+          'button',
+          {
+            class: 'btn s',
+            type: 'button',
+            onclick: () => box.hidden = true
+          },
+          'Cancelar'
+        )
+      )
+    );
+
+    error.replaceChildren();
+
+    form.onsubmit = async e => {
+      e.preventDefault();
+
+      const get = id => $('#' + id).value.trim();
+
+      const comissarios = [
+        ...form.querySelectorAll(
+          'input[name="comissario"]:checked'
+        )
+      ].map(input => input.value);
+
+      const voo = {
+        codigo_voo: Number(get('vCodigo')),
+        codigo_rota: Number(get('vTrajeto')),
+        numero_serie_aeronave: get('vAeronave'),
+        d_h_partida: get('vPartida'),
+        d_h_chegada: get('vChegada'),
+        cpf_administrador: get('vAdmin'),
+        cpf_piloto: get('vPiloto'),
+        cpf_copiloto: get('vCopiloto')
+      };
+
+      if (
+        !get('vCodigo') ||
+        !get('vTrajeto') ||
+        !get('vAeronave') ||
+        !get('vPartida') ||
+        !get('vChegada') ||
+        !get('vAdmin') ||
+        !get('vPiloto') ||
+        !get('vCopiloto')
+      ) {
+        error.replaceChildren(
+          msg('err', 'Preencha todos os campos obrigatórios.')
+        );
+        return;
+      }
+
+      if (comissarios.length < 2 || comissarios.length > 4) {
+        error.replaceChildren(
+          msg('err', 'Selecione de 2 a 4 comissários.')
+        );
+        return;
+      }
+
+      const submit = form.querySelector(
+        'button[type="submit"]'
+      );
+
+      submit.disabled = true;
+
+      error.replaceChildren(
+        msg('info', 'Salvando voo e escala no PostgreSQL...')
+      );
+
+      try {
+        await DATA.saveFlight(
+          voo,
+          comissarios,
+          existing?.codigo_voo ?? null
+        );
+
+        toast('Voo e escala salvos no PostgreSQL!');
+        box.hidden = true;
+
+        await renderAdmin();
+
+      } catch (err) {
+        error.replaceChildren(
+          msg('err', err.message)
+        );
+
+      } finally {
+        submit.disabled = false;
+      }
+    };
+
+    box.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+
+  } catch (err) {
+    error.replaceChildren(
+      msg('err', 'Erro ao carregar formulário: ' + err.message)
+    );
+  }
+};
+
+initBusca();
