@@ -435,9 +435,9 @@ async function route() {
   let target = location.hash.slice(1) || 'inicio';
 
   const paginas = [
-    'inicio', 'resultados', 'compra',
-    'gerente', 'admin', 'acesso'
-  ];
+  'inicio', 'resultados', 'compra',
+  'gerente', 'admin', 'acesso', 'acessoCliente'
+];
 
   if (!paginas.includes(target)) target = 'inicio';
 
@@ -568,6 +568,44 @@ async function initBusca() {
     }
 
     const voos = await resposta.json();
+
+const formatarData = valor =>
+  new Date(valor).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    dateStyle: 'short',
+    timeStyle: 'short'
+  });
+
+
+$('#tabelaVoosCliente').replaceChildren(
+  table([
+    { label: 'Voo', key: 'codigo_voo' },
+    { label: 'Origem', key: 'origem' },
+    { label: 'Destino', key: 'destino' },
+    {
+      label: 'Partida',
+      render: v => formatarData(v.d_h_partida)
+    },
+    {
+      label: 'Chegada',
+      render: v => formatarData(v.d_h_chegada)
+    },
+    {
+      label: 'Disponíveis',
+      key: 'disponiveis'
+    }
+  ], voos, v => [
+    h('button', {
+      class: 'btn y sm',
+      disabled: Number(v.disponiveis) <= 0,
+      onclick: () => {
+        S.flight = v;
+        location.hash = 'compra';
+      }
+    }, Number(v.disponiveis) > 0 ? 'Comprar' : 'Esgotado')
+  ])
+);
+
 
     const origens = [...new Set(voos.map(v => v.origem))];
     const destinos = [...new Set(voos.map(v => v.destino))];
@@ -717,6 +755,19 @@ async function renderPurchase() {
   const v = S.flight;
   if (!v) return;
 
+  const respostaSessao = await fetch('/api/sessao-cliente', {
+    cache: 'no-store'
+  });
+
+  if (!respostaSessao.ok) {
+    location.hash = 'acessoCliente';
+    return;
+  }
+
+  const { usuario } = await respostaSessao.json();
+  clienteLogado = usuario;
+
+
   const box = $('#compraBox');
   box.replaceChildren(state('Consultando assentos no Neon…'));
 
@@ -772,20 +823,19 @@ async function renderPurchase() {
     );
 
     // Consulta os clientes cadastrados no PostgreSQL
-    const respostaClientes = await fetch('/api/clientes');
+    
+  const respostaSessao = await fetch('/api/sessao-cliente', {
+    cache: 'no-store'
+  });
 
-    if (!respostaClientes.ok) {
-      throw new Error('Não foi possível carregar os clientes.');
-    }
+  if (!respostaSessao.ok) {
+    location.hash = 'acessoCliente';
+    return;
+  }
 
-    const clientes = await respostaClientes.json();
+  const { usuario } = await respostaSessao.json();
+  clienteLogado = usuario;
 
-    const seletorClientes = h('select', { id: 'cCli' },
-      h('option', { value: '' }, 'Selecione um cliente…'),
-      ...clientes.map(cliente =>
-        h('option', { value: cliente.cpf }, cliente.nome)
-      )
-    );
 
     const ocupados = new Set(dados.ocupados);
 
@@ -805,8 +855,7 @@ async function renderPurchase() {
     const formulario = h('div', { class: 'card' },
       h('h2', {}, 'Passageiro e assento'),
 
-      h('label', { for: 'cCli' }, 'Cliente cadastrado'),
-      seletorClientes,
+     h('p', {}, 'Passageiro: ' + usuario.nome),
 
 
       h('label', { for: 'cAss' }, 'Escolha seu assento'),
@@ -842,13 +891,12 @@ async function renderPurchase() {
 const botaoCompra = document.querySelector('#confirmarCompra');
 
 botaoCompra.onclick = async () => {
-  const cpf = document.querySelector('#cCli').value;
   const assento = Number(document.querySelector('#cAss').value);
 
-  if (!cpf || !assento) {
-    alert('Selecione um cliente e um assento.');
-    return;
-  }
+  if (!assento) {
+  alert('Selecione um assento.');
+  return;
+}
 
   botaoCompra.disabled = true;
   botaoCompra.textContent = 'Processando compra...';
@@ -861,7 +909,6 @@ botaoCompra.onclick = async () => {
       },
       body: JSON.stringify({
         codigo_voo: v.codigo_voo,
-        cpf_cliente: cpf,
         numero_assento: assento
       })
     });
@@ -1302,5 +1349,136 @@ for (const id of ['gerente', 'admin']) {
 
   $('#' + id).prepend(botao);
 }
+
+let clienteLogado = null;
+
+async function enviarCliente(url, dados) {
+  const resposta = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(resultado.erro || 'Operação não realizada.');
+  }
+
+  return resultado;
+}
+
+$('#fCadastroCliente').onsubmit = async evento => {
+  evento.preventDefault();
+
+  const botao = $('#fCadastroCliente button');
+  botao.disabled = true;
+
+  try {
+    const cpf = $('#cpfCadastroCliente').value.trim();
+    const senha = $('#senhaCadastroCliente').value;
+
+    await enviarCliente('/api/cadastro-cliente', {
+      nome: $('#nomeCadastroCliente').value.trim(),
+      cpf,
+      senha
+    });
+
+    $('#cpfLoginCliente').value = cpf;
+    $('#senhaLoginCliente').value = '';
+
+    $('#msgCadastroCliente').replaceChildren(
+      msg('ok', 'Cadastro realizado! Agora entre com sua senha.')
+    );
+
+    $('#fCadastroCliente').reset();
+
+  } catch (erro) {
+    $('#msgCadastroCliente').replaceChildren(
+      msg('err', erro.message)
+    );
+  } finally {
+    botao.disabled = false;
+  }
+};
+
+$('#fLoginCliente').onsubmit = async evento => {
+  evento.preventDefault();
+
+  const botao = $('#fLoginCliente button');
+  botao.disabled = true;
+
+  try {
+    const resultado = await enviarCliente('/api/login-cliente', {
+      cpf: $('#cpfLoginCliente').value.trim(),
+      senha: $('#senhaLoginCliente').value
+    });
+
+    clienteLogado = resultado.usuario;
+    await atualizarClienteLogado();
+    $('#senhaLoginCliente').value = '';
+
+    if (S.flight) {
+      location.hash = 'compra';
+      await route();
+    } else {
+      location.hash = 'inicio';
+      await route();
+    }
+
+  } catch (erro) {
+    $('#msgLoginCliente').replaceChildren(
+      msg('err', erro.message)
+    );
+  } finally {
+    botao.disabled = false;
+  }
+};
+
+async function atualizarClienteLogado() {
+  try {
+    const resposta = await fetch('/api/sessao-cliente', {
+      cache: 'no-store'
+    });
+
+    clienteLogado = resposta.ok
+      ? (await resposta.json()).usuario
+      : null;
+  } catch {
+    clienteLogado = null;
+  }
+
+  const area = $('#contaCliente');
+
+  if (!area) return;
+
+  area.replaceChildren();
+
+  if (clienteLogado) {
+    area.append(
+      h('span', {}, 'Olá, ' + clienteLogado.nome + ' '),
+      h('button', {
+        class: 'btn s sm',
+        onclick: async () => {
+          await fetch('/api/logout-cliente', {
+            method: 'POST'
+          });
+          clienteLogado = null;
+          location.hash = 'inicio';
+          await atualizarClienteLogado();
+        }
+      }, 'Sair')
+    );
+  } else {
+    area.append(
+      h('a', {
+        class: 'btn s',
+        href: '#acessoCliente'
+      }, 'Entrar ou criar conta')
+    );
+  }
+}
+
+atualizarClienteLogado();
 
 initBusca();

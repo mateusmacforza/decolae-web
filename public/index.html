@@ -11,6 +11,9 @@
   <nav id="nav" aria-label="Áreas do sistema"><a href="#inicio" data-g="cliente">Cliente</a><a href="#gerente" data-g="gerente">Gerente</a><a href="#admin" data-g="admin">Administrador</a></nav></div></header>
 <main>
   <section id="inicio">
+    <div id="contaCliente" style="text-align: right; margin:16px 0"></div>
+    
+</p>
     <div class="hero"><h1>Para onde vamos voar?</h1><p>Busque voos domésticos e reserve sua passagem.</p>
       <form class="search" id="fBusca">
         <div><label for="bo">Origem</label><select id="bo" required></select></div>
@@ -19,6 +22,11 @@
         <button class="btn y" type="submit">Buscar voos</button>
       </form><div id="buscaMsg" aria-live="polite"></div>
     </div>
+    <div class="card">
+  <h2>Voos disponíveis</h2>
+  
+  <div id="tabelaVoosCliente"></div>
+</div>
     <div class="card"><h2>Como funciona</h2><p class="sub">1. Busque um voo · 2. Selecione · 3. Informe cliente e assento · 4. Receba o código da reserva.</p></div>
   </section>
   <section id="resultados" hidden>
@@ -53,6 +61,47 @@
     </form>
 
     <div id="loginMsg" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="acessoCliente" hidden>
+  <div class="card" style="max-width:460px;margin:32px auto">
+    <h1>Área do cliente</h1>
+    <p class="sub">Entre na sua conta ou faça seu cadastro.</p>
+
+    <h2>Entrar</h2>
+    <form id="fLoginCliente" class="form">
+      <label for="cpfLoginCliente">CPF</label>
+      <input id="cpfLoginCliente" maxlength="11"
+             inputmode="numeric" required>
+
+      <label for="senhaLoginCliente">Senha</label>
+      <input id="senhaLoginCliente" type="password" required>
+
+      <button class="btn y" type="submit">Entrar</button>
+    </form>
+
+    <div id="msgLoginCliente" aria-live="polite"></div>
+
+    <hr>
+
+    <h2>Criar conta</h2>
+    <form id="fCadastroCliente" class="form">
+      <label for="nomeCadastroCliente">Nome completo</label>
+      <input id="nomeCadastroCliente" required>
+
+      <label for="cpfCadastroCliente">CPF</label>
+      <input id="cpfCadastroCliente" maxlength="11"
+             inputmode="numeric" required>
+
+      <label for="senhaCadastroCliente">Senha</label>
+      <input id="senhaCadastroCliente" type="password"
+             minlength="12" required>
+
+      <button class="btn y" type="submit">Cadastrar</button>
+    </form>
+
+    <div id="msgCadastroCliente" aria-live="polite"></div>
   </div>
 </section>
 
