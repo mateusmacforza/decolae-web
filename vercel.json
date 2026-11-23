@@ -1,0 +1,21 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/api/login-cliente",
+      "destination": "/api/cliente?acao=login"
+    },
+    {
+      "source": "/api/cadastro-cliente",
+      "destination": "/api/cliente?acao=cadastro"
+    },
+    {
+      "source": "/api/sessao-cliente",
+      "destination": "/api/cliente?acao=sessao"
+    },
+    {
+      "source": "/api/logout-cliente",
+      "destination": "/api/cliente?acao=logout"
+    }
+  ]
+}
