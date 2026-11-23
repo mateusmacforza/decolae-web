@@ -422,7 +422,7 @@ function modal(title,fields,values={},save){
       result[fld.key]=fld.type==='number'&&raw!==''?Number(raw):raw===''&&fld.required===false?null:raw;
       if(fld.type==='number'&&raw!==''&&(!Number.isFinite(result[fld.key])||(fld.integer&&!Number.isInteger(result[fld.key]))||(fld.min!==undefined&&result[fld.key]<fld.min))){message.replaceChildren(msg('err','Valor inválido: '+fld.label));return}
     }
-    try{await save(result);$('#dlg').close();toast('Registro salvo na demonstração.')}catch(err){message.replaceChildren(msg('err',err.message))}
+    try{await save(result);$('#dlg').close();toast('Registro salvo na Registro salvo com sucesso.')}catch(err){message.replaceChildren(msg('err',err.message))}
   };
   $('#dlg').showModal();
 }
@@ -462,6 +462,13 @@ async function route() {
       } else {
         const dados = await resposta.json();
         usuarioLogado = dados.usuario;
+        const seletor = target === 'gerente'
+  ? $('#gResponsavel')
+  : $('#vResponsavel');
+
+seletor.replaceChildren(
+  new Option(usuarioLogado.nome, usuarioLogado.cpf)
+);
 
         const cargoNecessario = areaSolicitada === 'gerente'
           ? 'GERENTE'
@@ -553,14 +560,6 @@ async function initBusca() {
   const destino = document.querySelector('#bd');
   const data = document.querySelector('#bdata');
   const mensagem = document.querySelector('#buscaMsg');
-  $('#gResponsavel').replaceChildren(
-  ...options(staff('GERENTE'), 'cpf', 'nome')
-);
-
-$('#vResponsavel').replaceChildren(
-  ...options(staff('ADMINISTRADOR'), 'cpf', 'nome')
-);
-
   try {
     const resposta = await fetch('/api/voos');
 
@@ -979,8 +978,8 @@ function openManager(existing){
   });
 }
 async function removeManager(record){
-  if(!confirm('Remover este registro da demonstração?'))return;
-  try{await DATA.remove(S.tab,record[keyOf[S.tab]]);toast('Registro removido na demonstração.');renderManager()}
+  if(!confirm('Deseja remover este registro?'))return;
+  try{await DATA.remove(S.tab,record[keyOf[S.tab]]);toast('Registro removido com sucesso.');renderManager()}
   catch(err){alert(err.message)}
 }
 
@@ -1004,7 +1003,7 @@ async function renderAdmin(){
   ]));
 }
 async function deleteFlight(v){
-  if(!confirm('Remover o voo '+v.codigo_voo+' da demonstração?'))return;
+  if(!confirm('Remover o voo '+v.codigo_voo+'?'))return;
   try{await DATA.remove('voo',v.codigo_voo);toast('Voo removido na demonstração.');renderAdmin()}
   catch(err){alert(err.message)}
 }
