@@ -66,6 +66,10 @@ function validar(dados) {
 }
 
 module.exports = async function handler(req, res) {
+  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+  const permitido = await autorizar(req, res, pool, ['GERENTE']);
+  if (!permitido) return;
+}
   // GET - Listar trajetos
   if (req.method === 'GET') {
     try {

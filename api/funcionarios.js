@@ -5,7 +5,7 @@ if (!process.env.DATABASE_URL &&
 }
 
 const { Pool } = require('pg');
-
+const { autorizar } = require('../lib/autorizar');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 3,
@@ -64,6 +64,23 @@ function validar(corpo) {
 }
 
 module.exports = async function handler(req, res) {
+
+  // GET: gerente e administrador podem consultar
+  if (req.method === 'GET') {
+    const permitido = await autorizar(
+      req, res, pool, ['GERENTE', 'ADMINISTRADOR']
+    );
+    if (!permitido) return;
+  }
+
+  // Somente gerente pode cadastrar, editar ou excluir
+  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+    const permitido = await autorizar(
+      req, res, pool, ['GERENTE']
+    );
+    if (!permitido) return;
+  }
+
   // GET - Consultar funcionários
   if (req.method === 'GET') {
     try {

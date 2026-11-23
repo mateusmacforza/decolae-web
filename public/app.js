@@ -428,20 +428,125 @@ function modal(title,fields,values={},save){
 }
 
 const S={search:null,flight:null,tab:'aeronave',selectedFlight:null};
-function route(){
-  let target=location.hash.slice(1)||'inicio';
-  if(!['inicio','resultados','compra','gerente','admin'].includes(target))target='inicio';
-  if(target==='resultados'&&!S.search||target==='compra'&&!S.flight)target='inicio';
-  for(const page of ['inicio','resultados','compra','gerente','admin'])$('#'+page).hidden=page!==target;
-  const current=['inicio','resultados','compra'].includes(target)?'cliente':target;
-  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.g===current));
-  if(target==='resultados')renderResults();
-  if(target==='compra')renderPurchase();
-  if(target==='gerente')renderManager();
-  if(target==='admin')renderAdmin();
-  window.scrollTo(0,0);
+
+let usuarioLogado = null;
+
+async function route() {
+  let target = location.hash.slice(1) || 'inicio';
+
+  const paginas = [
+    'inicio', 'resultados', 'compra',
+    'gerente', 'admin', 'acesso'
+  ];
+
+  if (!paginas.includes(target)) target = 'inicio';
+
+  if (
+    (target === 'resultados' && !S.search) ||
+    (target === 'compra' && !S.flight)
+  ) {
+    target = 'inicio';
+  }
+
+  const areaSolicitada = target;
+
+  if (target === 'gerente' || target === 'admin') {
+    try {
+      const resposta = await fetch('/api/sessao', {
+        cache: 'no-store'
+      });
+
+      if (!resposta.ok) {
+        usuarioLogado = null;
+        target = 'acesso';
+      } else {
+        const dados = await resposta.json();
+        usuarioLogado = dados.usuario;
+
+        const cargoNecessario = areaSolicitada === 'gerente'
+          ? 'GERENTE'
+          : 'ADMINISTRADOR';
+
+        if (usuarioLogado.cargo !== cargoNecessario) {
+          target = 'acesso';
+          $('#loginMsg').replaceChildren(
+            msg('err', 'Sua conta não possui acesso a esse painel.')
+          );
+        }
+      }
+    } catch {
+      usuarioLogado = null;
+      target = 'acesso';
+    }
+  }
+
+  for (const pagina of paginas) {
+    $('#' + pagina).hidden = pagina !== target;
+  }
+
+  const current = ['inicio', 'resultados', 'compra'].includes(target)
+    ? 'cliente'
+    : areaSolicitada;
+
+  document.querySelectorAll('#nav a').forEach(a => {
+    a.classList.toggle('on', a.dataset.g === current);
+  });
+
+  if (target === 'resultados') renderResults();
+  if (target === 'compra') renderPurchase();
+  if (target === 'gerente') renderManager();
+  if (target === 'admin') renderAdmin();
+
+  window.scrollTo(0, 0);
 }
-window.addEventListener('hashchange',route);
+
+window.addEventListener('hashchange', route);
+
+$('#fLogin').onsubmit = async e => {
+  e.preventDefault();
+
+  const botao = $('#fLogin button[type="submit"]');
+  botao.disabled = true;
+  $('#loginMsg').replaceChildren();
+
+  try {
+    const resposta = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: $('#loginCpf').value.trim(),
+        senha: $('#loginSenha').value
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || 'Falha no login.');
+    }
+
+    usuarioLogado = dados.usuario;
+    $('#loginSenha').value = '';
+
+    const destino = dados.usuario.cargo === 'GERENTE'
+      ? 'gerente'
+      : 'admin';
+
+    if (location.hash === '#' + destino) {
+      await route();
+    } else {
+      location.hash = destino;
+    }
+
+  } catch (erro) {
+    $('#loginMsg').replaceChildren(
+      msg('err', erro.message)
+    );
+  } finally {
+    botao.disabled = false;
+  }
+};
+
 
 async function initBusca() {
   const origem = document.querySelector('#bo');
@@ -1177,5 +1282,26 @@ async function openFlight(existing) {
     );
   }
 };
+
+async function sairDoSistema() {
+  await fetch('/api/logout', { method: 'POST' });
+  usuarioLogado = null;
+  location.hash = 'inicio';
+  route();
+}
+
+for (const id of ['gerente', 'admin']) {
+  const botao = h(
+    'button',
+    {
+      class: 'btn s',
+      type: 'button',
+      onclick: sairDoSistema
+    },
+    'Sair da conta'
+  );
+
+  $('#' + id).prepend(botao);
+}
 
 initBusca();

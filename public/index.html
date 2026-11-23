@@ -32,6 +32,31 @@
     <h1>Compra de passagem</h1><p class="sub">Revise o voo e confirme os dados.</p>
     <div id="compraBox" class="grid2"></div>
   </section>
+
+<section id="acesso" hidden>
+  <div class="card" style="max-width:440px;margin:32px auto">
+    <h1>Acesso de funcionários</h1>
+    <p class="sub">Entre com seu CPF e senha.</p>
+
+    <form id="fLogin" class="form">
+      <div>
+        <label for="loginCpf">CPF</label>
+        <input id="loginCpf" maxlength="11"
+               inputmode="numeric" required>
+      </div>
+
+      <div>
+        <label for="loginSenha">Senha</label>
+        <input id="loginSenha" type="password" required>
+      </div>
+
+      <button class="btn y" type="submit">Entrar</button>
+    </form>
+
+    <div id="loginMsg" aria-live="polite"></div>
+  </div>
+</section>
+
   <section id="gerente" hidden>
     <h1>Painel do gerente</h1><p class="sub">Cadastros da frota, malha e equipe.</p>
     <div class="head"><div><label for="gResponsavel">Gerente responsável pelos cadastros</label><select id="gResponsavel"></select></div></div>

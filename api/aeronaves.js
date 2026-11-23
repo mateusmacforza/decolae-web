@@ -5,6 +5,7 @@ if (!process.env.DATABASE_URL &&
 }
 
 const { Pool } = require('pg');
+const { autorizar } = require('../lib/autorizar');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -13,6 +14,17 @@ const pool = new Pool({
 });
 
 module.exports = async function handler(req, res) {
+
+  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+    const permitido = await autorizar(
+      req,
+      res,
+      pool,
+      ['GERENTE']
+    );
+
+    if (!permitido) return;
+  }
 
   // GET - Consultar aeronaves
   if (req.method === 'GET') {

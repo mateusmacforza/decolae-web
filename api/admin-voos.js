@@ -5,6 +5,7 @@ if (!process.env.DATABASE_URL &&
 }
 
 const { Pool } = require('pg');
+const { autorizar } = require('../lib/autorizar');
 try {
   const url = new URL(process.env.DATABASE_URL);
 
@@ -108,6 +109,10 @@ function validar(corpo) {
 }
 
 module.exports = async function handler(req, res) {
+    if (['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
+  const permitido = await autorizar(req, res, pool, ['ADMINISTRADOR']);
+  if (!permitido) return;
+}
 
   // GET - Consultar voos
   if (req.method === 'GET') {
