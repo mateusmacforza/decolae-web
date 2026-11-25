@@ -5,6 +5,7 @@ if (!process.env.DATABASE_URL &&
 }
 
 const { Pool } = require('pg');
+const { autorizar } = require('../lib/autorizar');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
